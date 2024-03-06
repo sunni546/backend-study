@@ -7,6 +7,8 @@ CORS(app)
 
 with sqlite3.connect("todo.db") as connection:
     cursor = connection.cursor()
+    # 테이블 초기화(DROP TABLE)
+    cursor.execute("DROP TABLE IF EXISTS todos")
     cursor.execute("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, content TEXT, status BOOLEAN)")
     connection.commit()
 
@@ -32,7 +34,10 @@ def get_todos():
         ]
     """
     with sqlite3.connect("todo.db") as connection:
-        return jsonify([])
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM todos")
+        datas = cursor.fetchall()
+        return jsonify(datas)
 
 
 @app.route('/todos', methods=['POST'])
@@ -55,7 +60,14 @@ def create_todo():
     print(content)
 
     with sqlite3.connect("todo.db") as connection:
-        return jsonify({})
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO todos (content, status) VALUES (?, False)", (content, ))
+        connection.commit()
+
+        cursor.execute("SELECT * FROM todos WHERE id=(SELECT MAX(id) FROM todos)")
+        data = cursor.fetchone()
+
+        return jsonify(data)
 
 
 @app.route('/todos/<int:id>', methods=['PATCH'])
@@ -79,7 +91,13 @@ def update_todo(id):
     print(id, status)
 
     with sqlite3.connect("todo.db") as connection:
-        return jsonify({})
+        cursor = connection.cursor()
+        cursor.execute("UPDATE todos SET status=? WHERE id=?", (status, id))
+        connection.commit()
+
+        cursor.execute("SELECT * FROM todos WHERE id=?", (id, ))
+        data = cursor.fetchone()
+        return jsonify(data)
 
 
 @app.route('/todos/<int:id>', methods=['DELETE'])
@@ -95,7 +113,13 @@ def delete_todo(id):
     print(id)
 
     with sqlite3.connect("todo.db") as connection:
-        return jsonify({})
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM todos WHERE id=?", (id, ))
+        connection.commit()
+
+        cursor.execute("SELECT * FROM todos WHERE id=?", (id, ))
+        data = cursor.fetchone()
+        return jsonify(data)
 
 
 if __name__ == '__main__':

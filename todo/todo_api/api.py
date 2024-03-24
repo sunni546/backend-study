@@ -8,11 +8,118 @@ CORS(app)
 with sqlite3.connect("todo.db") as connection:
     cursor = connection.cursor()
 
-    # 테이블 초기화(DROP TABLE)
-    # cursor.execute("DROP TABLE IF EXISTS todos")
+    """
+      # 테이블 초기화(DROP TABLE)
+      cursor.execute("DROP TABLE IF EXISTS todos")
+      cursor.execute("DROP TABLE IF EXISTS users")
+    """
 
     cursor.execute("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, content TEXT, status BOOLEAN)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, user_id TEXT UNIQUE, password TEXT)")
     connection.commit()
+
+
+# users 테이블 조회
+@app.route('/users', methods=['GET'])
+def get_users():
+    """
+      Description:
+        Get all user items
+      Returns:
+        [
+          {
+            "id": 1,
+            "user_id": "id1",
+            "password": "pw1"
+          },
+          {
+            "id": 2,
+            "user_id": "id2",
+            "password": "pw2"
+          },
+          ...
+        ]
+    """
+    with sqlite3.connect("todo.db") as connection:
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM users")
+        datas = cursor.fetchall()
+
+        result = []
+        for data in datas:
+            result.append({
+                "id": data[0],
+                "user_id": data[1],
+                "password": data[2]
+            })
+
+        return jsonify(result)
+
+
+@app.route('/join', methods=['POST'])
+def join():
+    """
+      Description:
+        Create a new user item
+      Request:
+        {
+          "user_id": "id1",
+          "password": "pw1"
+        }
+      Returns:
+        회원가입 성공 | 실패
+    """
+    user_id = request.json['user_id']
+    password = request.json['password']
+    print(user_id, password)
+
+    with sqlite3.connect("todo.db") as connection:
+        cursor = connection.cursor()
+
+        cursor.execute("INSERT INTO users (user_id, password) VALUES (?, ?)", (user_id, password))
+        connection.commit()
+
+        cursor.execute("SELECT * FROM users WHERE id=(SELECT MAX(id) FROM users)")
+        data = cursor.fetchone()
+
+        result = "회원가입 실패"
+        if data:
+            if data[1] == user_id and data[2] == password:
+                result = "회원가입 성공"
+
+        return result
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    """
+      Description:
+        Get a user item
+      Request:
+        {
+          "user_id": "id1",
+          "password": "pw1"
+        }
+      Returns:
+        로그인 성공 | 실패
+    """
+    user_id = request.json['user_id']
+    password = request.json['password']
+    print(user_id, password)
+
+    with sqlite3.connect("todo.db") as connection:
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM users WHERE user_id=? AND password=?", (user_id, password))
+        data = cursor.fetchone()
+
+        result = "로그인 실패"
+        if data:
+            if data[1] == user_id and data[2] == password:
+                result = "로그인 성공"
+
+        return result
 
 
 @app.route('/todos', methods=['GET'])

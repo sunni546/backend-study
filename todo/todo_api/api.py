@@ -148,14 +148,10 @@ def delete_todo(id):
 
 
 def make_result(data):
-    data_status = False
-    if data[2] == 1:
-        data_status = True
-
     result = {
         "id": data[0],
         "content": data[1],
-        "status": data_status
+        "status": bool(data[2])     # not not data[2]도 가능
     }
     
     return result

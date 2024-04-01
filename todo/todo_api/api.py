@@ -14,7 +14,7 @@ with sqlite3.connect("todo.db") as connection:
     cursor = connection.cursor()
 
     cursor.execute("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, content TEXT, status BOOLEAN)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, user_id TEXT UNIQUE, password TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE, password TEXT)")
     connection.commit()
 
 
@@ -25,15 +25,15 @@ def join():
         Create a new user item
       Request:
         {
-          "user_id": "id1",
-          "password": "pw1"
+          "email": "email1",
+          "password": "password1"
         }
       Returns:
         회원가입 성공 | 실패
     """
-    user_id = request.json['user_id']
+    email = request.json['email']
     password = request.json['password']
-    print(user_id, password)
+    print(email, password)
 
     password_hash = bcrypt.generate_password_hash(password)
     # print(password_hash)
@@ -41,7 +41,7 @@ def join():
     with sqlite3.connect("todo.db") as connection:
         cursor = connection.cursor()
 
-        cursor.execute("INSERT INTO users (user_id, password) VALUES (?, ?)", (user_id, password_hash))
+        cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password_hash))
         connection.commit()
 
         cursor.execute("SELECT * FROM users WHERE id=(SELECT MAX(id) FROM users)")
@@ -49,7 +49,7 @@ def join():
 
         result = "회원가입 실패"
         if data:
-            if data[1] == user_id and data[2] == password_hash:
+            if data[1] == email and data[2] == password_hash:
                 result = "회원가입 성공"
 
         return result
@@ -62,20 +62,20 @@ def login():
         Get a user item
       Request:
         {
-          "user_id": "id1",
-          "password": "pw1"
+          "email": "email1",
+          "password": "password1"
         }
       Returns:
         로그인 성공 | 실패
     """
-    user_id = request.json['user_id']
+    email = request.json['email']
     password = request.json['password']
-    print(user_id, password)
+    print(email, password)
 
     with sqlite3.connect("todo.db") as connection:
         cursor = connection.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id, ))
+        cursor.execute("SELECT * FROM users WHERE email=?", (email, ))
         data = cursor.fetchone()
 
         result = "로그인 실패"

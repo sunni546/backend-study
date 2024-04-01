@@ -13,51 +13,9 @@ bcrypt = Bcrypt(app)
 with sqlite3.connect("todo.db") as connection:
     cursor = connection.cursor()
 
-    # 테이블 초기화(DROP TABLE)
-    # cursor.execute("DROP TABLE IF EXISTS todos")
-    # cursor.execute("DROP TABLE IF EXISTS users")
-
     cursor.execute("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, content TEXT, status BOOLEAN)")
     cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, user_id TEXT UNIQUE, password TEXT)")
     connection.commit()
-
-
-# users 테이블 조회
-# @app.route('/users', methods=['GET'])
-# def get_users():
-#     """
-#       Description:
-#         Get all user items
-#       Returns:
-#         [
-#           {
-#             "id": 1,
-#             "user_id": "id1",
-#             "password": "(pw1)"
-#           },
-#           {
-#             "id": 2,
-#             "user_id": "id2",
-#             "password": "(pw2)"
-#           },
-#           ...
-#         ]
-#     """
-#     with sqlite3.connect("todo.db") as connection:
-#         cursor = connection.cursor()
-#
-#         cursor.execute("SELECT * FROM users")
-#         datas = cursor.fetchall()
-#
-#         result = []
-#         for data in datas:
-#             result.append({
-#                 "id": data[0],
-#                 "user_id": data[1],
-#                 "password": data[2].decode('utf8')
-#             })
-#
-#         return jsonify(result)
 
 
 @app.route('/join', methods=['POST'])

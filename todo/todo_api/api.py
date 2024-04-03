@@ -1,7 +1,8 @@
-import sqlite3
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, select
+from sqlalchemy.orm import Session, declarative_base, relationship
 
 app = Flask(__name__)
 CORS(app)
@@ -10,12 +11,37 @@ app.config['SECRET_KEY'] = 'secretKey'
 app.config['BCRYPT_LEVEL'] = 10
 bcrypt = Bcrypt(app)
 
-with sqlite3.connect("todo.db") as connection:
-    cursor = connection.cursor()
+# 문자열 URL : "dialect+driver://username:password@host:port/database"
+engine = create_engine("sqlite:///todo.db", echo=True, future=True)
+Base = declarative_base()
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, content TEXT, status BOOLEAN)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE, password TEXT)")
-    connection.commit()
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True)
+    password = Column(String)
+
+    # 연관관계 설정 : one to many
+    # todos = relationship("Todo", back_populates="user")
+
+    def __repr__(self):
+        return f"User(id={self.id!r}, name={self.name!r}, password={self.password!r})"
+
+
+class Todo(Base):
+    __tablename__ = 'todos'
+
+    id = Column(Integer, primary_key=True)
+    content = Column(String)
+    status = Column(Boolean)
+
+    # user_id = Column(Integer, ForeignKey('users.id'))
+    # user = relationship("User", back_populates="todos")
+
+    def __repr__(self):
+        return f"Todo(id={self.id!r}, content={self.content!r}, status={self.status!r})"
 
 
 @app.route('/join', methods=['POST'])
@@ -38,18 +64,16 @@ def join():
     password_hash = bcrypt.generate_password_hash(password)
     # print(password_hash)
 
-    with sqlite3.connect("todo.db") as connection:
-        cursor = connection.cursor()
+    with Session(engine) as session:
+        user_new = User(email=email, password=password_hash)
 
-        cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password_hash))
-        connection.commit()
-
-        cursor.execute("SELECT * FROM users WHERE id=(SELECT MAX(id) FROM users)")
-        data = cursor.fetchone()
+        session.add(user_new)
+        session.commit()
 
         result = "회원가입 실패"
-        if data:
-            if data[1] == email and data[2] == password_hash:
+
+        for row in session.execute(select(User.password).where(User.email == email)):
+            if row.password == password_hash:
                 result = "회원가입 성공"
 
         return result
@@ -72,15 +96,11 @@ def login():
     password = request.json['password']
     print(email, password)
 
-    with sqlite3.connect("todo.db") as connection:
-        cursor = connection.cursor()
-
-        cursor.execute("SELECT * FROM users WHERE email=?", (email, ))
-        data = cursor.fetchone()
-
+    with Session(engine) as session:
         result = "로그인 실패"
-        if data:
-            if bcrypt.check_password_hash(data[2], password):
+
+        for row in session.execute(select(User.password).where(User.email == email)):
+            if bcrypt.check_password_hash(row.password, password):
                 result = "로그인 성공"
 
         return result
@@ -106,15 +126,11 @@ def get_todos():
           ...
         ]
     """
-    with sqlite3.connect("todo.db") as connection:
-        cursor = connection.cursor()
-
-        cursor.execute("SELECT * FROM todos")
-        datas = cursor.fetchall()
-
+    with Session(engine) as session:
         result = []
-        for data in datas:
-            result.append(make_result(data))
+
+        for row in session.execute(select(Todo)):
+            result.append(make_result(row))
 
         return jsonify(result)
 
@@ -138,18 +154,16 @@ def create_todo():
     content = request.json['content']
     print(content)
 
-    with sqlite3.connect("todo.db") as connection:
-        cursor = connection.cursor()
+    with Session(engine) as session:
+        todo_insert = Todo(content=content, status=False)
 
-        cursor.execute("INSERT INTO todos (content, status) VALUES (?, False)", (content, ))
-        connection.commit()
-
-        cursor.execute("SELECT * FROM todos WHERE id=(SELECT MAX(id) FROM todos)")
-        data = cursor.fetchone()
+        session.add(todo_insert)
+        session.commit()
 
         result = {}
-        if data:
-            result = make_result(data)
+
+        for row in session.execute(select(Todo).where(Todo.id == todo_insert.id)):
+            result = make_result(row)
 
         return jsonify(result)
 
@@ -174,18 +188,17 @@ def update_todo(id):
     status = request.json['status']
     print(id, status)
 
-    with sqlite3.connect("todo.db") as connection:
-        cursor = connection.cursor()
+    with Session(engine) as session:
+        todo_update = session.get(Todo, id)
 
-        cursor.execute("UPDATE todos SET status=? WHERE id=?", (status, id))
-        connection.commit()
-
-        cursor.execute("SELECT * FROM todos WHERE id=?", (id, ))
-        data = cursor.fetchone()
+        todo_update.status = status
+        session.commit()
 
         result = {}
-        if data:
-            result = make_result(data)
+
+        if not (todo_update in session.dirty):
+            for row in session.execute(select(Todo).where(Todo.id == id)):
+                result = make_result(row)
 
         return jsonify(result)
 
@@ -202,29 +215,28 @@ def delete_todo(id):
     """
     print(id)
 
-    with sqlite3.connect("todo.db") as connection:
-        cursor = connection.cursor()
+    with Session(engine) as session:
+        todo_delete = session.get(Todo, id)
 
-        cursor.execute("DELETE FROM todos WHERE id=?", (id, ))
-        connection.commit()
-
-        cursor.execute("SELECT * FROM todos WHERE id=?", (id, ))
-        data = cursor.fetchone()
+        session.delete(todo_delete)
+        session.commit()
 
         result = {}
-        if data:
-            result = make_result(data)
+
+        if todo_delete in session:
+            for row in session.execute(select(Todo).where(Todo.id == id)):
+                result = make_result(row)
 
         return jsonify(result)
 
 
-def make_result(data):
+def make_result(row):
     result = {
-        "id": data[0],
-        "content": data[1],
-        "status": bool(data[2])     # not not data[2]도 가능
+        "id": row.Todo.id,
+        "content": row.Todo.content,
+        "status": bool(row.Todo.status)  # not not row.Todo.status 도 가능
     }
-    
+
     return result
 
 

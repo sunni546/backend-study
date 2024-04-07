@@ -65,16 +65,16 @@ def join():
     # print(password_hash)
 
     with Session(engine) as session:
-        user_new = User(email=email, password=password_hash)
+        user = User(email=email, password=password_hash)
 
-        session.add(user_new)
-        session.commit()
+        try:
+            session.add(user)
+            session.commit()
 
-        result = "회원가입 실패"
+            result = "회원가입 성공"
 
-        for row in session.execute(select(User.password).where(User.email == email)):
-            if row.password == password_hash:
-                result = "회원가입 성공"
+        except Exception:
+            result = "회원가입 실패"
 
         return result
 
@@ -97,11 +97,15 @@ def login():
     print(email, password)
 
     with Session(engine) as session:
-        result = "로그인 실패"
-
-        for row in session.execute(select(User.password).where(User.email == email)):
-            if bcrypt.check_password_hash(row.password, password):
+        try:
+            data = session.execute(select(User.password).where(User.email == email)).scalar_one()
+            if bcrypt.check_password_hash(data, password):
                 result = "로그인 성공"
+            else:
+                result = "로그인 실패"
+
+        except Exception:
+            result = "로그인 실패"
 
         return result
 
@@ -129,8 +133,13 @@ def get_todos():
     with Session(engine) as session:
         result = []
 
-        for row in session.execute(select(Todo)):
-            result.append(make_result(row))
+        try:
+            todos = session.execute(select(Todo))
+            for row in todos:
+                result.append(make_result(row.Todo))
+
+        except Exception as e:
+            print(e)
 
         return jsonify(result)
 
@@ -155,15 +164,16 @@ def create_todo():
     print(content)
 
     with Session(engine) as session:
-        todo_insert = Todo(content=content, status=False)
+        todo = Todo(content=content, status=False)
 
-        session.add(todo_insert)
-        session.commit()
+        try:
+            session.add(todo)
+            session.commit()
 
-        result = {}
+            result = make_result(todo)
 
-        for row in session.execute(select(Todo).where(Todo.id == todo_insert.id)):
-            result = make_result(row)
+        except:
+            result = {}
 
         return jsonify(result)
 
@@ -189,16 +199,16 @@ def update_todo(id):
     print(id, status)
 
     with Session(engine) as session:
-        todo_update = session.get(Todo, id)
+        try:
+            todo = session.get(Todo, id)
 
-        todo_update.status = status
-        session.commit()
+            todo.status = status
+            session.commit()
 
-        result = {}
+            result = make_result(todo)
 
-        if not (todo_update in session.dirty):
-            for row in session.execute(select(Todo).where(Todo.id == id)):
-                result = make_result(row)
+        except:
+            result = {}
 
         return jsonify(result)
 
@@ -216,25 +226,25 @@ def delete_todo(id):
     print(id)
 
     with Session(engine) as session:
-        todo_delete = session.get(Todo, id)
+        try:
+            todo = session.get(Todo, id)
 
-        session.delete(todo_delete)
-        session.commit()
+            session.delete(todo)
+            session.commit()
 
-        result = {}
+            result = {}
 
-        if todo_delete in session:
-            for row in session.execute(select(Todo).where(Todo.id == id)):
-                result = make_result(row)
+        except:
+            result = make_result(todo)
 
         return jsonify(result)
 
 
-def make_result(row):
+def make_result(todo):
     result = {
-        "id": row.Todo.id,
-        "content": row.Todo.content,
-        "status": bool(row.Todo.status)  # not not row.Todo.status 도 가능
+        "id": todo.id,
+        "content": todo.content,
+        "status": bool(todo.status)  # not not todo.status 도 가능
     }
 
     return result

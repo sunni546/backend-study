@@ -24,7 +24,7 @@ class User(Base):
     password = Column(String)
 
     # 연관관계 설정 : one to many
-    # todos = relationship("Todo", back_populates="user")
+    todos = relationship("Todo", back_populates="user")
 
     def __repr__(self):
         return f"User(id={self.id!r}, name={self.name!r}, password={self.password!r})"
@@ -37,11 +37,14 @@ class Todo(Base):
     content = Column(String)
     status = Column(Boolean)
 
-    # user_id = Column(Integer, ForeignKey('users.id'))
-    # user = relationship("User", back_populates="todos")
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship("User", back_populates="todos")
 
     def __repr__(self):
         return f"Todo(id={self.id!r}, content={self.content!r}, status={self.status!r})"
+
+
+Base.metadata.create_all(engine)
 
 
 @app.route('/join', methods=['POST'])
@@ -73,7 +76,8 @@ def join():
 
             result = "회원가입 성공"
 
-        except Exception:
+        except Exception as e:
+            print(e)
             result = "회원가입 실패"
 
         return result
@@ -104,7 +108,8 @@ def login():
             else:
                 result = "로그인 실패"
 
-        except Exception:
+        except Exception as e:
+            print(e)
             result = "로그인 실패"
 
         return result
@@ -120,12 +125,14 @@ def get_todos():
           {
             "id": 1,
             "content": "Buy groceries",
-            "status": false
+            "status": false,
+            "user_id": 1
           },
           {
             "id": 2,
             "content": "Do laundry",
-            "status": true
+            "status": true,
+            "user_id": 1
           },
           ...
         ]
@@ -157,14 +164,15 @@ def create_todo():
         {
           "id": 1,
           "content": "Buy groceries",
-          "status": false
+          "status": false,
+          "user_id": 1
         }
     """
     content = request.json['content']
     print(content)
 
     with Session(engine) as session:
-        todo = Todo(content=content, status=False)
+        todo = Todo(content=content, status=False, user_id=1)
 
         try:
             session.add(todo)
@@ -172,7 +180,8 @@ def create_todo():
 
             result = make_result(todo)
 
-        except:
+        except Exception as e:
+            print(e)
             result = {}
 
         return jsonify(result)
@@ -192,7 +201,8 @@ def update_todo(id):
         {
           "id": 1,
           "content": "Buy groceries",
-          "status": true
+          "status": true,
+          "user_id": 1
         }
     """
     status = request.json['status']
@@ -207,7 +217,8 @@ def update_todo(id):
 
             result = make_result(todo)
 
-        except:
+        except Exception as e:
+            print(e)
             result = {}
 
         return jsonify(result)
@@ -234,7 +245,8 @@ def delete_todo(id):
 
             result = {}
 
-        except:
+        except Exception as e:
+            print(e)
             result = make_result(todo)
 
         return jsonify(result)
@@ -244,7 +256,8 @@ def make_result(todo):
     result = {
         "id": todo.id,
         "content": todo.content,
-        "status": bool(todo.status)  # not not todo.status 도 가능
+        "status": bool(todo.status),  # not not todo.status 도 가능
+        "user_id": todo.user_id
     }
 
     return result

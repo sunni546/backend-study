@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+import jwt
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -14,6 +17,8 @@ bcrypt = Bcrypt(app)
 # 문자열 URL : "dialect+driver://username:password@host:port/database"
 engine = create_engine("sqlite:///todo.db", echo=True, future=True)
 Base = declarative_base()
+
+SECRET_KEY = app.config['SECRET_KEY']
 
 
 class User(Base):
@@ -102,9 +107,12 @@ def login():
 
     with Session(engine) as session:
         try:
-            data = session.execute(select(User.password).where(User.email == email)).scalar_one()
-            if bcrypt.check_password_hash(data, password):
+            user = session.execute(select(User.id, User.password).where(User.email == email)).first()
+            if bcrypt.check_password_hash(user.password, password):
                 result = "로그인 성공"
+
+                return jsonify({'result': result,
+                                'jwt': create_token(user.id)})
             else:
                 result = "로그인 실패"
 
@@ -113,6 +121,16 @@ def login():
             result = "로그인 실패"
 
         return result
+
+
+def create_token(user_id):
+    payload = {
+        'email': user_id,
+        'exp': datetime.utcnow() + timedelta(seconds=60 * 30)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+    return token
 
 
 @app.route('/todos', methods=['GET'])

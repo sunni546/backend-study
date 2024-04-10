@@ -125,12 +125,30 @@ def login():
 
 def create_token(user_id):
     payload = {
-        'email': user_id,
+        'user_id': user_id,
         'exp': datetime.utcnow() + timedelta(seconds=60 * 30)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
     return token
+
+
+def validate_token(token):
+    try:
+        jwt.decode(token, SECRET_KEY, algorithms="HS256")
+    except jwt.exceptions.DecodeError:
+        return False
+    except jwt.exceptions.ExpiredSignatureError:
+        return False
+    except jwt.InvalidTokenError:
+        return False
+
+    return True
+
+
+def get_user_id(token):
+    payload = jwt.decode(token, SECRET_KEY, algorithms="HS256")
+    return payload['user_id']
 
 
 @app.route('/todos', methods=['GET'])
@@ -155,6 +173,14 @@ def get_todos():
           ...
         ]
     """
+    token = request.headers.get('Authorization')
+
+    if not validate_token(token):
+        return "로그인 실패"
+
+    user_id = get_user_id(token)
+    print(user_id)
+
     with Session(engine) as session:
         result = []
 
@@ -187,7 +213,13 @@ def create_todo():
         }
     """
     content = request.json['content']
-    print(content)
+    token = request.headers.get('Authorization')
+
+    if not validate_token(token):
+        return "로그인 실패"
+
+    user_id = get_user_id(token)
+    print(user_id, content)
 
     with Session(engine) as session:
         todo = Todo(content=content, status=False, user_id=1)
@@ -224,7 +256,13 @@ def update_todo(id):
         }
     """
     status = request.json['status']
-    print(id, status)
+    token = request.headers.get('Authorization')
+
+    if not validate_token(token):
+        return "로그인 실패"
+
+    user_id = get_user_id(token)
+    print(user_id, id, status)
 
     with Session(engine) as session:
         try:
@@ -252,7 +290,13 @@ def delete_todo(id):
       Returns:
         {}
     """
-    print(id)
+    token = request.headers.get('Authorization')
+
+    if not validate_token(token):
+        return "로그인 실패"
+
+    user_id = get_user_id(token)
+    print(user_id, id)
 
     with Session(engine) as session:
         try:

@@ -185,7 +185,7 @@ def get_todos():
         result = []
 
         try:
-            todos = session.execute(select(Todo))
+            todos = session.execute(select(Todo).where(Todo.user_id == user_id))
             for row in todos:
                 result.append(make_result(row.Todo))
 
@@ -222,7 +222,7 @@ def create_todo():
     print(user_id, content)
 
     with Session(engine) as session:
-        todo = Todo(content=content, status=False, user_id=1)
+        todo = Todo(content=content, status=False, user_id=user_id)
 
         try:
             session.add(todo)
@@ -268,6 +268,9 @@ def update_todo(id):
         try:
             todo = session.get(Todo, id)
 
+            if todo.user_id != user_id:
+                return "수정 권한 없음"
+
             todo.status = status
             session.commit()
 
@@ -301,6 +304,9 @@ def delete_todo(id):
     with Session(engine) as session:
         try:
             todo = session.get(Todo, id)
+
+            if todo.user_id != user_id:
+                return "삭제 권한 없음"
 
             session.delete(todo)
             session.commit()

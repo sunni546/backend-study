@@ -8,7 +8,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(16), unique=True)
-    password = db.Column(db.String(16))
+    password = db.Column(db.String(255))
 
     # 연관관계 설정 : one to many
     todos = db.relationship("Todo", back_populates="user")

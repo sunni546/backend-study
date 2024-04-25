@@ -4,24 +4,22 @@ from flask_restx import Namespace, Resource, fields
 from models import db, Todo
 from my_jwt import validate_token, get_user_id
 
-Todo_api = Namespace('Todo_api')
+Todo_api = Namespace(name='Todo_api', description="API for managing todos")
 
 todo_content = Todo_api.model('Todo_content', {
-    'content': fields.String(required=True, example="Buy groceries")
+    'content': fields.String(description='Todo content', required=True, example="Buy groceries")
 })
 
 todo_status = Todo_api.model('Todo_status', {
-    'status': fields.Boolean(required=True, example="true")
+    'status': fields.Boolean(description='Todo status', equired=True, example="true")
 })
 
 
 @Todo_api.route('')
 class TodoCR(Resource):
-    # get_todos
     def get(self):
         """
-          Description:
-            Get all todo items
+          Get all todo items.
         """
         """
           Returns:
@@ -61,12 +59,10 @@ class TodoCR(Resource):
 
         return jsonify(result)
 
-    # create_todo
     @Todo_api.expect(todo_content)
     def post(self):
         """
-          Description:
-            Create a new todo item
+          Create a new todo item.
         """
         """
           Request:
@@ -106,13 +102,12 @@ class TodoCR(Resource):
 
 
 @Todo_api.route('/<int:id>')
+@Todo_api.doc(params={'id': 'Todo ID'})
 class TodoUD(Resource):
-    # update_todo
     @Todo_api.expect(todo_status)
     def patch(self, id):
         """
-          Description:
-            Update a todo item
+          Update a todo item.
         """
         """
           Request:
@@ -154,11 +149,9 @@ class TodoUD(Resource):
 
         return jsonify(result)
 
-    # delete_todo
     def delete(self, id):
         """
-          Description:
-            Delete a todo item
+          Delete a todo item.
         """
         """
           Request:

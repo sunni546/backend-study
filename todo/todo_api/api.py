@@ -26,6 +26,10 @@ authorizations = {'bearer_auth': {
 
 api = Api(
     app,
+    version='0.1',
+    title="Todo API Server",
+    description="User CRUD todo.",
+    terms_url="/",
     authorizations=authorizations
 )
 

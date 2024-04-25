@@ -5,13 +5,13 @@ from flask_restx import Namespace, Resource, fields
 from models import db, User
 from my_jwt import create_token
 
-User_api = Namespace('User_api')
+User_api = Namespace(name='User_api', description="API for managing users")
 
 bcrypt = Bcrypt()
 
 user_fields = User_api.model('User', {
-    'email': fields.String(required=True, example="email1"),
-    'password': fields.String(required=True, example="password1")
+    'email': fields.String(description='User email', required=True, example="email1"),
+    'password': fields.String(description='User password', required=True, example="password1")
 })
 
 
@@ -20,8 +20,7 @@ class Join(Resource):
     @User_api.expect(user_fields)
     def post(self):
         """
-          Description:
-            Create a new user item
+        Create a new user item.
         """
         """
           Request:
@@ -59,8 +58,7 @@ class Login(Resource):
     @User_api.expect(user_fields)
     def post(self):
         """
-          Description:
-            Get a user item
+          Get a user item.
         """
         """
           Request:

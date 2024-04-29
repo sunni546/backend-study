@@ -14,7 +14,7 @@ class User(db.Model):
     todos = db.relationship("Todo", back_populates="user")
 
     def __repr__(self):
-        return f"User(id={self.id!r}, name={self.name!r}, password={self.password!r})"
+        return f"User(id={self.id!r}, email={self.email!r}, password={self.password!r})"
 
 
 class Todo(db.Model):

@@ -115,7 +115,7 @@ def get_type(p_e):
         return 'another'
 
 
-@User_api.route('/following/<int:id>')
+@User_api.route('/follow/<int:id>')
 @User_api.doc(params={'id': 'Following ID'})
 class Following(Resource):
     def post(self, id):
@@ -176,6 +176,7 @@ class Following(Resource):
     def delete(self, id):
         """
           Delete a follow item.
+          Update a user item.
         """
         """
           Request:

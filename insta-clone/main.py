@@ -4,7 +4,7 @@ from flask_restx import Api
 
 from config import Config
 from models import db
-from user_api import User_api, bcrypt
+from api.user_api import User_api, bcrypt
 
 app = Flask(__name__)
 CORS(app)

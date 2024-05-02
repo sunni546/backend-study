@@ -35,16 +35,16 @@ class Join(Resource):
         password = request.json.get('password')
         print(phone_email, name, nickname, password)
 
-        password_hash = bcrypt.generate_password_hash(password)
-
-        if get_type(phone_email) == 'phone':
-            user = User(phone_number=phone_email, name=name, nickname=nickname, password=password_hash)
-        elif get_type(phone_email) == 'email':
-            user = User(email=phone_email, name=name, nickname=nickname, password=password_hash)
-        else:
-            return jsonify({'result': "회원가입 실패 - 잘못된 형식의 전화번호 or 이메일입니다."})
-
         try:
+            password_hash = bcrypt.generate_password_hash(password)
+
+            if get_type(phone_email) == 'phone':
+                user = User(phone_number=phone_email, name=name, nickname=nickname, password=password_hash)
+            elif get_type(phone_email) == 'email':
+                user = User(email=phone_email, name=name, nickname=nickname, password=password_hash)
+            else:
+                return jsonify({'result': "회원가입 실패 - 잘못된 형식의 전화번호 or 이메일입니다."})
+
             db.session.add(user)
             db.session.commit()
 

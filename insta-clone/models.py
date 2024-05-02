@@ -19,6 +19,7 @@ class User(db.Model):
     following_number = db.Column(db.Integer, default=0)
 
     follows = db.relationship("Follow", back_populates="user")
+    posts = db.relationship("Post", back_populates="user")
 
     def __repr__(self):
         return (f"User(id={self.id!r}, "
@@ -40,3 +41,21 @@ class Follow(db.Model):
 
     def __repr__(self):
         return f"Follow(id={self.id!r}, following_id={self.following_id!r}, user_id={self.user_id!r})"
+
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(255))
+    image = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.TIMESTAMP, server_default=db.text("CURRENT_TIMESTAMP"))
+    like_number = db.Column(db.Integer, default=0)
+    comment_number = db.Column(db.Integer, default=0)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = db.relationship("User", back_populates="posts")
+
+    def __repr__(self):
+        return (f"User(id={self.id!r}, content={self.content!r}, image={self.image!r}, created_at={self.created_at!r}, "
+                f"like_number={self.like_number!r}, comment_number={self.comment_number!r}, user_id={self.user_id!r})")

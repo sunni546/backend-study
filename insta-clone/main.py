@@ -2,9 +2,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 
+from api.post_api import Post_api
+from api.user_api import User_api, bcrypt
 from config import Config
 from models import db
-from api.user_api import User_api, bcrypt
 
 app = Flask(__name__)
 CORS(app)
@@ -33,6 +34,7 @@ api = Api(
 )
 
 api.add_namespace(User_api, '/users')
+api.add_namespace(Post_api, '/posts')
 
 
 if __name__ == '__main__':

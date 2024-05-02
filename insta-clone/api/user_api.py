@@ -10,6 +10,51 @@ User_api = Namespace(name='User_api', description="API for managing users")
 bcrypt = Bcrypt()
 
 
+@User_api.route('')
+class Get(Resource):
+    def get(self):
+        """
+          Get a user item.
+        """
+        """
+          Request:
+            {
+              "nickname": "nickname1"
+            }
+          Returns:
+            {
+              "id": 1,
+              "name": "name1",
+              "nickname": "nickname1",
+              "image": "image1",
+              "post_number": 1,
+              "follower_number": 0,
+              "following_number": 1
+            }
+        """
+        nickname = request.json.get('nickname')
+        print(nickname)
+
+        try:
+            user = User.query.filter_by(nickname=nickname).first()
+
+            result = {
+                "id": user.id,
+                "name": user.name,
+                "nickname": user.nickname,
+                "image": user.image,
+                "post_number": user.post_number,
+                "follower_number": user.follower_number,
+                "following_number": user.following_number
+            }
+
+        except Exception as e:
+            print(e)
+            result = {}
+
+        return jsonify(result)
+
+
 @User_api.route('/join')
 class Join(Resource):
     def post(self):

@@ -18,6 +18,8 @@ class Get(Resource):
         """
         """
           Request:
+            {}
+            or
             {
               "nickname": "nickname1"
             }
@@ -32,11 +34,20 @@ class Get(Resource):
               "following_number": 1
             }
         """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        user_id = get_user_id(token)
         nickname = request.json.get('nickname')
-        print(nickname)
+        print(user_id, nickname)
 
         try:
-            user = User.query.filter_by(nickname=nickname).first()
+            if nickname:
+                user = User.query.filter_by(nickname=nickname).first()
+            else:
+                user = User.query.filter_by(id=user_id).first()
 
             result = {
                 "id": user.id,

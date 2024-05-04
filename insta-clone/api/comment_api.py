@@ -12,6 +12,7 @@ class CommentC(Resource):
     def post(self):
         """
           Create a new comment item.
+          Update a post item.
         """
         """
           Request:

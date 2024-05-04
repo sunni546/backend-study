@@ -77,8 +77,11 @@ class Like(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
     post = db.relationship("Post", back_populates="likes")
 
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
+    comment = db.relationship("Comment", back_populates="likes")
+
     def __repr__(self):
-        return f"Like(id={self.id!r}, user_id={self.user_id!r}, post_id={self.post_id!r})"
+        return f"Like(id={self.id!r}, user_id={self.user_id!r}, post_id={self.post_id!r}, comment_id={self.comment_id!r})"
 
 
 class Comment(db.Model):
@@ -94,6 +97,8 @@ class Comment(db.Model):
 
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
     post = db.relationship("Post", back_populates="comments")
+
+    likes = db.relationship("Like", back_populates="comment")
 
     def __repr__(self):
         return (f"Comment(id={self.id!r}, "

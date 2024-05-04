@@ -11,7 +11,7 @@ bcrypt = Bcrypt()
 
 
 @User_api.route('')
-class Get(Resource):
+class UserG(Resource):
     def get(self):
         """
           Get a user item.

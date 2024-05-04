@@ -1,36 +1,38 @@
 from flask import request, jsonify
 from flask_restx import Namespace, Resource
 
-from models import db, Post, Like
+from models import db, Comment, Post
 from my_jwt import validate_token, get_user_id
 
-Like_api = Namespace(name='Like_api', description="API for managing likes")
+Comment_api = Namespace(name='Comment_api', description="API for managing comments")
 
 
-@Like_api.route('/')
-class LikeCR(Resource):
+@Comment_api.route('')
+class CommentCR(Resource):
     def get(self):
         """
-          Get all like items.
+          Get all comment items.
         """
         """
           Request:
             {
               "post_id": 1
             }
-            or
-            {
-              "comment_id": 1
-            }
           Returns:
             [
               {
                 "id": 1,
+                "content": "comment_content1",
+                "created_at": 2024-05-02 14:12:13,
+                "like_number": 0,
                 "user_id": 1,
                 "post_id": 1
               },
               {
                 "id": 2,
+                "content": "comment_content2",
+                "created_at": 2024-05-02 14:16:44,
+                "like_number": 0,
                 "user_id": 2,
                 "post_id": 1
               },
@@ -49,10 +51,10 @@ class LikeCR(Resource):
         result = []
 
         try:
-            likes = Like.query.filter_by(post_id=post_id).all()
+            comments = Comment.query.filter_by(post_id=post_id).all()
 
-            for like in likes:
-                result.append(make_result(like))
+            for comment in comments:
+                result.append(make_result(comment))
 
         except Exception as e:
             print(e)
@@ -61,20 +63,20 @@ class LikeCR(Resource):
 
     def post(self):
         """
-          Create a new like item.
+          Create a new comment item.
         """
         """
           Request:
             {
+              "content": "comment_content1",
               "post_id": 1
-            }
-            or
-            {
-              "comment_id": 1
             }
           Returns:
             {
               "id": 1,
+              "content": "comment_content1",
+              "created_at": 2024-05-02 14:12:13,
+              "like_number": 0,
               "user_id": 1,
               "post_id": 1
             }
@@ -87,23 +89,19 @@ class LikeCR(Resource):
         user_id = get_user_id(token)
 
         post_id = request.json.get('post_id')
-        print(user_id, post_id)
+        content = request.json.get('content')
+        print(user_id, post_id, content)
 
         try:
-            like = Like.query.filter_by(post_id=post_id, user_id=user_id).first()
-            if like:
-                result = {'result': "좋아요 실패 - 이미 사용자가 좋아요 한 게시물입니다."}
+            comment = Comment(content=content, post_id=post_id, user_id=user_id)
+            db.session.add(comment)
 
-            else:
-                like = Like(post_id=post_id, user_id=user_id)
-                db.session.add(like)
+            post = db.session.get(Post, post_id)
+            post.comment_number += 1
 
-                post = db.session.get(Post, post_id)
-                post.like_number += 1
+            db.session.commit()
 
-                db.session.commit()
-
-                result = make_result(like)
+            result = make_result(comment)
 
         except Exception as e:
             print(e)
@@ -112,19 +110,22 @@ class LikeCR(Resource):
         return jsonify(result)
 
 
-@Like_api.route('/<int:id>')
-@Like_api.doc(params={'id': 'Like ID'})
-class LikeRD(Resource):
+@Comment_api.route('/<int:id>')
+@Comment_api.doc(params={'id': 'Comment ID'})
+class CommentRD(Resource):
     def get(self, id):
         """
-          Get a like item.
+          Get a comment item.
         """
         """
           Request:
-            GET /likes/1
+            GET /comments/1
           Returns:
             {
               "id": 1,
+              "content": "comment_content1",
+              "created_at": 2024-05-02 14:12:13,
+              "like_number": 0,
               "user_id": 1,
               "post_id": 1
             }
@@ -138,9 +139,9 @@ class LikeRD(Resource):
         print(user_id, id)
 
         try:
-            like = db.session.get(Like, id)
+            comment = db.session.get(Comment, id)
 
-            result = make_result(like)
+            result = make_result(comment)
 
         except Exception as e:
             print(e)
@@ -150,12 +151,12 @@ class LikeRD(Resource):
 
     def delete(self, id):
         """
-          Delete a like item.
+          Delete a comment item.
           Update a post item.
         """
         """
           Request:
-            DELETE /likes/1
+            DELETE /comments/1
           Returns:
             {}
         """
@@ -168,31 +169,34 @@ class LikeRD(Resource):
         print(user_id, id)
 
         try:
-            like = db.session.get(Like, id)
+            comment = db.session.get(Comment, id)
 
-            if like.user_id != user_id:
-                return jsonify({'result': "좋아요 취소 실패 - 권한 없음"})
+            if comment.user_id != user_id:
+                return jsonify({'result': "댓글 삭제 실패 - 권한 없음"})
 
-            post = db.session.get(Post, like.post_id)
-            post.like_number -= 1
+            post = db.session.get(Post, comment.post_id)
+            post.comment_number -= 1
 
-            db.session.delete(like)
+            db.session.delete(comment)
             db.session.commit()
 
             result = {}
 
         except Exception as e:
             print(e)
-            result = {'result': "좋아요 취소 실패"}
+            result = {'result': "댓글 삭제 실패"}
 
         return jsonify(result)
 
 
-def make_result(like):
+def make_result(comment):
     result = {
-        "id": like.id,
-        "user_id": like.user_id,
-        "post_id": like.post_id
+        "id": comment.id,
+        "content": comment.content,
+        "created_at": comment.created_at,
+        "like_number": comment.like_number,
+        "user_id": comment.user_id,
+        "post_id": comment.post_id
     }
 
     return result

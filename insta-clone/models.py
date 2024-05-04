@@ -21,6 +21,7 @@ class User(db.Model):
     follows = db.relationship("Follow", back_populates="user")
     posts = db.relationship("Post", back_populates="user")
     likes = db.relationship("Like", back_populates="user")
+    comments = db.relationship("Comment", back_populates="user")
 
     def __repr__(self):
         return (f"User(id={self.id!r}, "
@@ -58,6 +59,7 @@ class Post(db.Model):
     user = db.relationship("User", back_populates="posts")
 
     likes = db.relationship("Like", back_populates="post")
+    comments = db.relationship("Comment", back_populates="post")
 
     def __repr__(self):
         return (f"User(id={self.id!r}, content={self.content!r}, image={self.image!r}, created_at={self.created_at!r}, "
@@ -77,3 +79,23 @@ class Like(db.Model):
 
     def __repr__(self):
         return f"Like(id={self.id!r}, user_id={self.user_id!r}, post_id={self.post_id!r})"
+
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(255))
+    created_at = db.Column(db.TIMESTAMP, server_default=db.text("CURRENT_TIMESTAMP"))
+    like_number = db.Column(db.Integer, default=0)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = db.relationship("User", back_populates="comments")
+
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+    post = db.relationship("Post", back_populates="comments")
+
+    def __repr__(self):
+        return (f"Comment(id={self.id!r}, "
+                f"content={self.content!r}, created_at={self.created_at!r}, like_number={self.like_number!r}, "
+                f"user_id={self.user_id!r}, post_id={self.post_id!r})")

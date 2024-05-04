@@ -18,11 +18,7 @@ class UserG(Resource):
         """
         """
           Request:
-            {}
-            or
-            {
-              "nickname": "nickname1"
-            }
+            GET /users
           Returns:
             {
               "id": 1,
@@ -40,30 +36,73 @@ class UserG(Resource):
             return jsonify({'result': "로그인 실패"})
 
         user_id = get_user_id(token)
-        nickname = request.json.get('nickname')
-        print(user_id, nickname)
+        print(user_id)
 
         try:
-            if nickname:
-                user = User.query.filter_by(nickname=nickname).first()
-            else:
-                user = User.query.filter_by(id=user_id).first()
+            user = User.query.filter_by(id=user_id).first()
 
-            result = {
-                "id": user.id,
-                "name": user.name,
-                "nickname": user.nickname,
-                "image": user.image,
-                "post_number": user.post_number,
-                "follower_number": user.follower_number,
-                "following_number": user.following_number
-            }
+            result = make_result(user)
 
         except Exception as e:
             print(e)
             result = {}
 
         return jsonify(result)
+
+
+@User_api.route('/<string:nickname>')
+@User_api.doc(params={'nickname': 'User nickname'})
+class UserGWithNickname(Resource):
+    def get(self, nickname):
+        """
+          Get a user item with nickname.
+        """
+        """
+          Request:
+            GET /users/nickname1
+          Returns:
+            {
+              "id": 1,
+              "name": "name1",
+              "nickname": "nickname1",
+              "image": "image1",
+              "post_number": 1,
+              "follower_number": 0,
+              "following_number": 1
+            }
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        user_id = get_user_id(token)
+        print(user_id, nickname)
+
+        try:
+            user = User.query.filter_by(nickname=nickname).first()
+
+            result = make_result(user)
+
+        except Exception as e:
+            print(e)
+            result = {}
+
+        return jsonify(result)
+
+
+def make_result(user):
+    result = {
+        "id": user.id,
+        "name": user.name,
+        "nickname": user.nickname,
+        "image": user.image,
+        "post_number": user.post_number,
+        "follower_number": user.follower_number,
+        "following_number": user.following_number
+    }
+
+    return result
 
 
 @User_api.route('/join')

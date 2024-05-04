@@ -8,57 +8,7 @@ Like_api = Namespace(name='Like_api', description="API for managing likes")
 
 
 @Like_api.route('/')
-class LikeCR(Resource):
-    def get(self):
-        """
-          Get all like items.
-        """
-        """
-          Request:
-            {
-              "post_id": 1
-            }
-            or
-            {
-              "comment_id": 1
-            }
-          Returns:
-            [
-              {
-                "id": 1,
-                "user_id": 1,
-                "post_id": 1
-              },
-              {
-                "id": 2,
-                "user_id": 2,
-                "post_id": 1
-              },
-              ...
-            ]
-        """
-        token = request.headers.get('Authorization')
-
-        if not validate_token(token):
-            return jsonify({'result': "로그인 실패"})
-
-        user_id = get_user_id(token)
-        post_id = request.json.get('post_id')
-        print(user_id, post_id)
-
-        result = []
-
-        try:
-            likes = Like.query.filter_by(post_id=post_id).all()
-
-            for like in likes:
-                result.append(make_result(like))
-
-        except Exception as e:
-            print(e)
-
-        return jsonify(result)
-
+class LikeC(Resource):
     def post(self):
         """
           Create a new like item.
@@ -134,8 +84,7 @@ class LikeRD(Resource):
         if not validate_token(token):
             return jsonify({'result': "로그인 실패"})
 
-        user_id = get_user_id(token)
-        print(user_id, id)
+        print(id)
 
         try:
             like = db.session.get(Like, id)
@@ -184,6 +133,53 @@ class LikeRD(Resource):
         except Exception as e:
             print(e)
             result = {'result': "좋아요 취소 실패"}
+
+        return jsonify(result)
+
+
+@Like_api.route('/<string:type>/<int:id>')
+@Like_api.doc(params={'type': 'Post | Comment', 'id': 'Post ID | Comment ID'})
+class LikeR(Resource):
+    def get(self, type, id):
+        """
+          Get all like items with type and id.
+        """
+        """
+          Request:
+            GET /likes/post/1
+          Returns:
+            [
+              {
+                "id": 1,
+                "user_id": 1,
+                "post_id": 1
+              },
+              {
+                "id": 2,
+                "user_id": 2,
+                "post_id": 1
+              },
+              ...
+            ]
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        user_id = get_user_id(token)
+        print(user_id, type, id)
+
+        result = []
+
+        try:
+            likes = Like.query.filter_by(post_id=id).all()
+
+            for like in likes:
+                result.append(make_result(like))
+
+        except Exception as e:
+            print(e)
 
         return jsonify(result)
 

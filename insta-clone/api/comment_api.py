@@ -8,59 +8,7 @@ Comment_api = Namespace(name='Comment_api', description="API for managing commen
 
 
 @Comment_api.route('')
-class CommentCR(Resource):
-    def get(self):
-        """
-          Get all comment items.
-        """
-        """
-          Request:
-            {
-              "post_id": 1
-            }
-          Returns:
-            [
-              {
-                "id": 1,
-                "content": "comment_content1",
-                "created_at": 2024-05-02 14:12:13,
-                "like_number": 0,
-                "user_id": 1,
-                "post_id": 1
-              },
-              {
-                "id": 2,
-                "content": "comment_content2",
-                "created_at": 2024-05-02 14:16:44,
-                "like_number": 0,
-                "user_id": 2,
-                "post_id": 1
-              },
-              ...
-            ]
-        """
-        token = request.headers.get('Authorization')
-
-        if not validate_token(token):
-            return jsonify({'result': "로그인 실패"})
-
-        user_id = get_user_id(token)
-        post_id = request.json.get('post_id')
-        print(user_id, post_id)
-
-        result = []
-
-        try:
-            comments = Comment.query.filter_by(post_id=post_id).all()
-
-            for comment in comments:
-                result.append(make_result(comment))
-
-        except Exception as e:
-            print(e)
-
-        return jsonify(result)
-
+class CommentC(Resource):
     def post(self):
         """
           Create a new comment item.
@@ -185,6 +133,59 @@ class CommentRD(Resource):
         except Exception as e:
             print(e)
             result = {'result': "댓글 삭제 실패"}
+
+        return jsonify(result)
+
+
+@Comment_api.route('/post/<int:id>')
+@Comment_api.doc(params={'id': 'Post ID'})
+class CommentR(Resource):
+    def get(self, id):
+        """
+          Get all comment items with post id.
+        """
+        """
+          Request:
+            GET /comments/post/1
+          Returns:
+            [
+              {
+                "id": 1,
+                "content": "comment_content1",
+                "created_at": 2024-05-02 14:12:13,
+                "like_number": 0,
+                "user_id": 1,
+                "post_id": 1
+              },
+              {
+                "id": 2,
+                "content": "comment_content2",
+                "created_at": 2024-05-02 14:16:44,
+                "like_number": 0,
+                "user_id": 2,
+                "post_id": 1
+              },
+              ...
+            ]
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        user_id = get_user_id(token)
+        print(user_id, id)
+
+        result = []
+
+        try:
+            comments = Comment.query.filter_by(post_id=id).all()
+
+            for comment in comments:
+                result.append(make_result(comment))
+
+        except Exception as e:
+            print(e)
 
         return jsonify(result)
 

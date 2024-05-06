@@ -21,8 +21,9 @@ class Following(Resource):
           Returns:
             {
               "id": 1,
-              "following_id": "2",
-              "user_id": 1
+              "following_id": 2,
+              "user_id": 1,
+              "follower_number": 1
             }
         """
         token = request.headers.get('Authorization')
@@ -56,7 +57,8 @@ class Following(Resource):
                 result = {
                     "id": follow.id,
                     "following_id": follow.following_id,
-                    "user_id": follow.user_id
+                    "user_id": follow.user_id,
+                    "follower_number": following.follower_number
                 }
 
         except Exception as e:
@@ -74,7 +76,9 @@ class Following(Resource):
           Request:
             DELETE /follows/2
           Returns:
-            {}
+            {
+              "follower_number": 0
+            }
         """
         token = request.headers.get('Authorization')
 
@@ -100,7 +104,7 @@ class Following(Resource):
 
             db.session.commit()
 
-            result = {}
+            result = {"follower_number": following.follower_number}
 
         except Exception as e:
             print(e)

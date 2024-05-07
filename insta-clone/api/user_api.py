@@ -11,10 +11,10 @@ bcrypt = Bcrypt()
 
 
 @User_api.route('')
-class UserG(Resource):
+class UserGWithJwt(Resource):
     def get(self):
         """
-          Get a user item.
+          Get a user item with jwt.
         """
         """
           Request:
@@ -40,6 +40,47 @@ class UserG(Resource):
 
         try:
             user = User.query.filter_by(id=user_id).first()
+
+            result = make_result(user)
+
+        except Exception as e:
+            print(e)
+            result = {}
+
+        return jsonify(result)
+
+
+@User_api.route('/<int:id>')
+@User_api.doc(params={'id': 'User ID'})
+class UserG(Resource):
+    def get(self, id):
+        """
+          Get a user item.
+        """
+        """
+          Request:
+            GET /users/1
+          Returns:
+            {
+              "id": 1,
+              "name": "name1",
+              "nickname": "nickname1",
+              "image": "image1",
+              "post_number": 1,
+              "follower_number": 0,
+              "following_number": 1
+            }
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        user_id = get_user_id(token)
+        print(user_id, id)
+
+        try:
+            user = User.query.filter_by(id=id).first()
 
             result = make_result(user)
 

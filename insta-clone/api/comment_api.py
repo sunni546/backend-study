@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_restx import Namespace, Resource
 
-from models import db, Comment, Post
+from models import db, Comment, Post, User
 from my_jwt import validate_token, get_user_id
 
 Comment_api = Namespace(name='Comment_api', description="API for managing comments")
@@ -156,7 +156,7 @@ class CommentR(Resource):
                 "created_at": 2024-05-02 14:12:13,
                 "like_number": 0,
                 "user_id": 1,
-                "post_id": 1
+                "nickname": "nickname1"
               },
               {
                 "id": 2,
@@ -164,7 +164,7 @@ class CommentR(Resource):
                 "created_at": 2024-05-02 14:16:44,
                 "like_number": 0,
                 "user_id": 2,
-                "post_id": 1
+                "nickname": "nickname2"
               },
               ...
             ]
@@ -183,7 +183,14 @@ class CommentR(Resource):
             comments = Comment.query.filter_by(post_id=id).all()
 
             for comment in comments:
-                result.append(make_result(comment))
+                user = db.session.get(User, comment.user_id)
+
+                result.append({"id": comment.id,
+                               "content": comment.content,
+                               "created_at": comment.created_at,
+                               "like_number": comment.like_number,
+                               "user_id": comment.user_id,
+                               "nickname": user.nickname})
 
         except Exception as e:
             print(e)

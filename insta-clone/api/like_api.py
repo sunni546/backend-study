@@ -7,8 +7,8 @@ from my_jwt import validate_token, get_user_id
 Like_api = Namespace(name='Like_api', description="API for managing likes")
 
 
-@Like_api.route('/')
-class LikeC(Resource):
+@Like_api.route('')
+class LikeCD(Resource):
     def post(self):
         """
           Create a new like item.
@@ -82,10 +82,68 @@ class LikeC(Resource):
 
         return jsonify(result)
 
+    def delete(self):
+        """
+          Delete a like item.
+          Update a post item. or Update a comment item.
+        """
+        """
+          Request:
+            {
+              "post_id": 1
+            }
+            or
+            {
+              "comment_id": 1
+            }
+          Returns:
+            {}
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        user_id = get_user_id(token)
+
+        post_id = request.json.get('post_id')
+        comment_id = request.json.get('comment_id')
+        print(user_id, post_id, comment_id)
+
+        try:
+            if post_id:
+                like = Like.query.filter_by(post_id=post_id, user_id=user_id).first()
+
+                post = db.session.get(Post, like.post_id)
+                post.like_number -= 1
+
+                db.session.delete(like)
+
+            elif comment_id:
+                like = Like.query.filter_by(comment_id=comment_id, user_id=user_id).first()
+
+                comment = db.session.get(Comment, like.comment_id)
+                comment.like_number -= 1
+
+                db.session.delete(like)
+
+            else:
+                return jsonify({'result': "좋아요 취소 실패 - post_id나 comment_id가 없습니다."})
+
+            db.session.commit()
+
+            result = {}
+
+        except Exception as e:
+            print(e)
+            result = {'result': "좋아요 취소 실패"}
+
+        return jsonify(result)
+
 
 @Like_api.route('/<int:id>')
 @Like_api.doc(params={'id': 'Like ID'})
-class LikeRD(Resource):
+class LikeR(Resource):
     def get(self, id):
         """
           Get a like item.
@@ -116,50 +174,6 @@ class LikeRD(Resource):
         except Exception as e:
             print(e)
             result = {}
-
-        return jsonify(result)
-
-    def delete(self, id):
-        """
-          Delete a like item.
-          Update a post item. or Update a comment item.
-        """
-        """
-          Request:
-            DELETE /likes/1
-          Returns:
-            {}
-        """
-        token = request.headers.get('Authorization')
-
-        if not validate_token(token):
-            return jsonify({'result': "로그인 실패"})
-
-        user_id = get_user_id(token)
-        print(user_id, id)
-
-        try:
-            like = db.session.get(Like, id)
-
-            if like.user_id != user_id:
-                return jsonify({'result': "좋아요 취소 실패 - 권한 없음"})
-
-            if like.post_id:
-                post = db.session.get(Post, like.post_id)
-                post.like_number -= 1
-
-            elif like.comment_id:
-                comment = db.session.get(Comment, like.comment_id)
-                comment.like_number -= 1
-
-            db.session.delete(like)
-            db.session.commit()
-
-            result = {}
-
-        except Exception as e:
-            print(e)
-            result = {'result': "좋아요 취소 실패"}
 
         return jsonify(result)
 

@@ -2,6 +2,9 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 
+from api.brand_api import Brand_api
+from api.category_api import Category_api
+from api.item_api import Item_api
 from api.user_api import User_api, bcrypt
 from config import Config
 from models import db
@@ -33,6 +36,9 @@ api = Api(
 )
 
 api.add_namespace(User_api, '/users')
+api.add_namespace(Item_api, '/items')
+api.add_namespace(Brand_api, '/brands')
+api.add_namespace(Category_api, '/categories')
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5001, debug=True)

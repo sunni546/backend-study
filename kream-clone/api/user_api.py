@@ -14,7 +14,7 @@ bcrypt = Bcrypt()
 class UserR(Resource):
     def get(self):
         """
-          Get a user item with jwt.
+          Get a user with jwt.
         """
         """
           Request:
@@ -36,13 +36,13 @@ class UserR(Resource):
         print(user_id)
 
         try:
-            user = User.query.filter_by(id=user_id).first()
+            user = db.session.get(User, user_id)
 
             result = {
-                "id": user.id,
-                "email": user.email,
-                "nickname": user.nickname,
-                "image": user.image
+                'id': user.id,
+                'email': user.email,
+                'nickname': user.nickname,
+                'image': user.image
             }
 
         except Exception as e:
@@ -56,7 +56,7 @@ class UserR(Resource):
 class Join(Resource):
     def post(self):
         """
-        Create a new user item.
+        Create a new user.
         """
         """
           Request:
@@ -98,7 +98,7 @@ class Join(Resource):
 class Login(Resource):
     def post(self):
         """
-          Get a user item.
+          Get a user's jwt.
         """
         """
           Request:

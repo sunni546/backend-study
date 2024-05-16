@@ -79,7 +79,6 @@ class BrandCR(Resource):
 @Brand_api.route('/<int:id>')
 @Brand_api.doc(params={'id': 'Brand ID'})
 class BrandRUD(Resource):
-    @Brand_api.expect(brand_fields)
     def get(self, id):
         """
           Get a brand with ID.

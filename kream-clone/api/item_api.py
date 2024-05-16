@@ -12,7 +12,7 @@ Item_api = Namespace(name='Item_api', description="API for managing items")
 class ItemCR(Resource):
     def get(self):
         """
-          Get all items.
+          Get all items. | Get all items with brand name. | Get all items with category name.
         """
         """
           Request:

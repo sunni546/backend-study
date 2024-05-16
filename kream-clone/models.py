@@ -42,6 +42,8 @@ class Item(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     category = db.relationship("Category", back_populates="items")
 
+    sizes = db.relationship("Size", back_populates="item")
+
     def __repr__(self):
         return (f"Item(id={self.id!r}, name={self.name!r}, image={self.image!r}, recent_price={self.recent_price!r}, "
                 f"release_price={self.release_price!r}, model={self.model!r}, released_at={self.released_at!r}, color={self.color!r}, "
@@ -71,3 +73,16 @@ class Category(db.Model):
 
     def __repr__(self):
         return f"Category(id={self.id!r}, name={self.name!r})"
+
+
+class Size(db.Model):
+    __tablename__ = 'sizes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(16), nullable=False, default="ONE SIZE")
+
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+    item = db.relationship("Item", back_populates="sizes")
+
+    def __repr__(self):
+        return f"Size(id={self.id!r}, type={self.type!r}, item_id={self.item_id!r})"

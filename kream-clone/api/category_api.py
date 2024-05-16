@@ -79,7 +79,6 @@ class CategoryCR(Resource):
 @Category_api.route('/<int:id>')
 @Category_api.doc(params={'id': 'Category ID'})
 class CategoryRUD(Resource):
-    @Category_api.expect(category_fields)
     def get(self, id):
         """
           Get a category with ID.

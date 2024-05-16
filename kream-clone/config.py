@@ -3,6 +3,8 @@ import os
 secret_key = 'kreamSecretKey'
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+DELIVERY_TYPE = ["빠른 배송", "일반 배송"]
+
 
 class Config:
     SECRET_KEY = secret_key

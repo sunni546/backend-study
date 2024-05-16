@@ -84,5 +84,24 @@ class Size(db.Model):
     item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
     item = db.relationship("Item", back_populates="sizes")
 
+    stocks = db.relationship("Stock", back_populates="size")
+
     def __repr__(self):
         return f"Size(id={self.id!r}, type={self.type!r}, item_id={self.item_id!r})"
+
+
+class Stock(db.Model):
+    __tablename__ = 'stocks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    price = db.Column(db.Integer, nullable=False)
+    delivery_type = db.Column(db.String(16), nullable=False)
+    status = db.Column(db.Boolean, nullable=False, default=False)
+    purchased_at = db.Column(db.Date)
+
+    size_id = db.Column(db.Integer, db.ForeignKey('sizes.id'))
+    size = db.relationship("Size", back_populates="stocks")
+
+    def __repr__(self):
+        return (f"Stock(id={self.id!r}, price={self.price!r}, delivery_type={self.delivery_type!r}, "
+                f"status={self.status!r}, purchased_at={self.purchased_at!r}, size_id={self.size_id!r})")

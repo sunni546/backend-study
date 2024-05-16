@@ -16,6 +16,8 @@ class User(db.Model):
     address = db.Column(db.String(255))
     shoe_size = db.Column(db.Integer, default=0)
 
+    interests = db.relationship("Interest", back_populates="user")
+
     def __repr__(self):
         return (f"User(id={self.id!r}, email={self.email!r}, password={self.password!r}, "
                 f"name={self.name!r}, nickname={self.nickname!r}, phone_number={self.phone_number!r}, "
@@ -85,6 +87,7 @@ class Size(db.Model):
     item = db.relationship("Item", back_populates="sizes")
 
     stocks = db.relationship("Stock", back_populates="size")
+    interests = db.relationship("Interest", back_populates="size")
 
     def __repr__(self):
         return f"Size(id={self.id!r}, type={self.type!r}, item_id={self.item_id!r})"
@@ -105,3 +108,18 @@ class Stock(db.Model):
     def __repr__(self):
         return (f"Stock(id={self.id!r}, price={self.price!r}, delivery_type={self.delivery_type!r}, "
                 f"status={self.status!r}, purchased_at={self.purchased_at!r}, size_id={self.size_id!r})")
+
+
+class Interest(db.Model):
+    __tablename__ = 'interests'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    size_id = db.Column(db.Integer, db.ForeignKey('sizes.id'))
+    size = db.relationship("Size", back_populates="interests")
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = db.relationship("User", back_populates="interests")
+
+    def __repr__(self):
+        return f"Interest(id={self.id!r}, size_id={self.size_id!r}, user_id={self.user_id!r})"

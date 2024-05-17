@@ -9,7 +9,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(16), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    name = db.Column(db.String(8))
+    name = db.Column(db.String(16))
     nickname = db.Column(db.String(16), unique=True)
     phone_number = db.Column(db.String(16), unique=True)
     image = db.Column(db.String(255))
@@ -123,3 +123,18 @@ class Interest(db.Model):
 
     def __repr__(self):
         return f"Interest(id={self.id!r}, size_id={self.size_id!r}, user_id={self.user_id!r})"
+
+
+class Delivery(db.Model):
+    __tablename__ = 'deliveries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    info = db.Column(db.String(255))
+    name = db.Column(db.String(16), nullable=False)
+    phone_number = db.Column(db.String(16), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
+    request_info = db.Column(db.String(255))
+
+    def __repr__(self):
+        return (f"Delivery(id={self.id!r}, info={self.info!r}, name={self.name!r}, "
+                f"phone_number={self.phone_number!r}, address={self.address!r}), request_info={self.request_info!r})")

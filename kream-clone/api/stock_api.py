@@ -56,10 +56,10 @@ class StockCR(Resource):
 
         try:
             if size_id:
-                stocks = Stock.query.filter_by(size_id=size_id).all()
+                stocks = Stock.query.filter_by(size_id=size_id, status=False).order_by(Stock.price.asc()).all()
 
             else:
-                stocks = Stock.query.all()
+                stocks = Stock.query.filter_by(status=False).order_by(Stock.price.asc()).all()
 
             for stock in stocks:
                 result.append(make_result(stock))
@@ -97,7 +97,7 @@ class StockCR(Resource):
 
         try:
             if delivery_type or delivery_type == 0:
-                if 0 <= delivery_type <= 1:
+                if 0 <= delivery_type < len(DELIVERY_TYPE):
                     delivery_type = DELIVERY_TYPE[delivery_type]
                 else:
                     return jsonify({'result': "추가 실패 - 올바른 배송 종류를 선택하세요."})
@@ -185,7 +185,7 @@ class StockRUD(Resource):
                 stock.price = price
 
             if delivery_type or delivery_type == 0:
-                if 0 <= delivery_type <= 1:
+                if 0 <= delivery_type < len(DELIVERY_TYPE):
                     stock.delivery_type = DELIVERY_TYPE[delivery_type]
                 else:
                     return jsonify({'result': "수정 실패 - 올바른 배송 종류를 선택하세요."})

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -17,6 +19,7 @@ class User(db.Model):
     shoe_size = db.Column(db.Integer, default=0)
 
     interests = db.relationship("Interest", back_populates="user")
+    orders = db.relationship("Order", back_populates="user")
 
     def __repr__(self):
         return (f"User(id={self.id!r}, email={self.email!r}, password={self.password!r}, "
@@ -105,6 +108,8 @@ class Stock(db.Model):
     size_id = db.Column(db.Integer, db.ForeignKey('sizes.id'))
     size = db.relationship("Size", back_populates="stocks")
 
+    order = db.relationship("Order", back_populates="stock", uselist=False)
+
     def __repr__(self):
         return (f"Stock(id={self.id!r}, price={self.price!r}, delivery_type={self.delivery_type!r}, "
                 f"status={self.status!r}, purchased_at={self.purchased_at!r}, size_id={self.size_id!r})")
@@ -135,6 +140,30 @@ class Delivery(db.Model):
     address = db.Column(db.String(255), nullable=False)
     request_info = db.Column(db.String(255))
 
+    order = db.relationship("Order", back_populates="delivery", uselist=False)
+
     def __repr__(self):
         return (f"Delivery(id={self.id!r}, info={self.info!r}, name={self.name!r}, "
                 f"phone_number={self.phone_number!r}, address={self.address!r}), request_info={self.request_info!r})")
+
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+
+    id = db.Column(db.Integer, primary_key=True)
+    ordered_at = db.Column(db.DateTime, nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(16))
+
+    stock_id = db.Column(db.Integer, db.ForeignKey('stocks.id'), unique=True)
+    stock = db.relationship("Stock", back_populates="order")
+
+    delivery_id = db.Column(db.Integer, db.ForeignKey('deliveries.id'), unique=True)
+    delivery = db.relationship("Delivery", back_populates="order")
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = db.relationship("User", back_populates="orders")
+
+    def __repr__(self):
+        return (f"Order(id={self.id!r}, ordered_at={self.ordered_at!r}, price={self.price!r}, status={self.status!r}, "
+                f"stock_id={self.stock_id!r}), delivery_id={self.delivery_id!r}, user_id={self.user_id!r})")

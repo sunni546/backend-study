@@ -77,16 +77,21 @@ class InterestCR(Resource):
         print(user_id, size_id)
 
         try:
-            interest = Interest(size_id=size_id, user_id=user_id)
-            db.session.add(interest)
+            interest = Interest.query.filter_by(size_id=size_id, user_id=user_id).first()
+            if interest:
+                result = {'result': "관심상품 추가 실패 - 이미 사용자가 관심 추가한 상품입니다."}
 
-            size = Size.query.filter_by(id=size_id).with_entities(Size.item_id).first()
-            item = db.session.get(Item, size.item_id)
-            item.interest_number += 1
+            else:
+                interest = Interest(size_id=size_id, user_id=user_id)
+                db.session.add(interest)
 
-            db.session.commit()
+                size = Size.query.filter_by(id=size_id).with_entities(Size.item_id).first()
+                item = db.session.get(Item, size.item_id)
+                item.interest_number += 1
 
-            result = make_result(interest)
+                db.session.commit()
+
+                result = make_result(interest)
 
         except Exception as e:
             print(e)

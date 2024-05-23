@@ -14,15 +14,9 @@ Stock_api = Namespace(name='Stock_api', description="API for managing stocks")
 class StockCR(Resource):
     def get(self):
         """
-          Get all stocks. | Get all stocks with size ID.
+          Get all stocks.
         """
         """
-          Request:
-            {}
-            or
-            {
-              "size_id": 1
-            }
           Returns:
             [
               {
@@ -49,17 +43,10 @@ class StockCR(Resource):
         if not validate_token(token):
             return jsonify({'result': "로그인 실패"})
 
-        size_id = request.json.get('size_id')
-        print(size_id)
-
         result = []
 
         try:
-            if size_id:
-                stocks = Stock.query.filter_by(size_id=size_id, status=False).order_by(Stock.price.asc()).all()
-
-            else:
-                stocks = Stock.query.filter_by(status=False).order_by(Stock.price.asc()).all()
+            stocks = Stock.query.filter_by(status=False).order_by(Stock.price.asc()).all()
 
             for stock in stocks:
                 result.append(make_result(stock))
@@ -230,6 +217,58 @@ class StockRUD(Resource):
         except Exception as e:
             print(e)
             result = {'result': "삭제 실패"}
+
+        return jsonify(result)
+
+
+@Stock_api.route('/size/<int:id>')
+@Stock_api.doc(params={'id': 'Size ID'})
+class StockR(Resource):
+    def get(self, id):
+        """
+          Get all stocks with size ID.
+        """
+        """
+          Request:
+            GET /stocks/size/1
+          Returns:
+            [
+              {
+                "id": 1,
+                "price": 89000,
+                "delivery_type": "빠른 배송",
+                "status": false,
+                "purchased_at": null,
+                "size_id": 1
+              },
+              {
+                "id": 2,
+                "price": 90000,
+                "delivery_type": "일반 배송",
+                "status": false,
+                "purchased_at": null,
+                "size_id": 1
+              },
+              ...
+            ]
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        print(id)
+
+        result = []
+
+        try:
+            stocks = Stock.query.filter_by(size_id=id, status=False).order_by(Stock.price.asc()).all()
+
+            for stock in stocks:
+                result.append(make_result(stock))
+
+        except Exception as e:
+            print(e)
 
         return jsonify(result)
 

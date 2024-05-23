@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_restx import Namespace, Resource, fields
 
-from models import Size, db
+from models import Size, db, Stock
 from my_jwt import validate_token
 
 Size_api = Namespace(name='Size_api', description="API for managing sizes")
@@ -15,21 +15,16 @@ size_type = Size_api.model('Size', {
 class SizeCR(Resource):
     def get(self):
         """
-          Get all sizes. | Get all sizes with item ID.
+          Get all sizes.
         """
         """
-          Request:
-            {}
-            or
-            {
-              "item_id": 1
-            }
           Returns:
             [
               {
                 "id": 1,
                 "type": "240",
-                "item_id": 1
+                "item_id": 1,
+                "min_price": 90000
               },
               {
                 "id": 2,
@@ -44,20 +39,20 @@ class SizeCR(Resource):
         if not validate_token(token):
             return jsonify({'result': "로그인 실패"})
 
-        item_id = request.json.get('item_id')
-        print(item_id)
-
         result = []
 
         try:
-            if item_id:
-                sizes = Size.query.filter_by(item_id=item_id).all()
-
-            else:
-                sizes = Size.query.all()
+            sizes = Size.query.all()
 
             for size in sizes:
-                result.append(make_result(size))
+                r = make_result(size)
+
+                stock = (Stock.query.filter_by(size_id=size.id, status=False).order_by(Stock.price.asc())
+                         .with_entities(Stock.price).first())
+                if stock:
+                    r['min_price'] = stock.price
+
+                result.append(r)
 
         except Exception as e:
             print(e)
@@ -114,7 +109,8 @@ class SizeRUD(Resource):
             {
               "id": 1,
               "type": "240",
-              "item_id": 1
+              "item_id": 1,
+              "min_price": 90000
             }
         """
         token = request.headers.get('Authorization')
@@ -128,6 +124,11 @@ class SizeRUD(Resource):
             size = db.session.get(Size, id)
 
             result = make_result(size)
+
+            stock = (Stock.query.filter_by(size_id=size.id, status=False).order_by(Stock.price.asc())
+                     .with_entities(Stock.price).first())
+            if stock:
+                result['min_price'] = stock.price
 
         except Exception as e:
             print(e)
@@ -193,6 +194,60 @@ class SizeRUD(Resource):
         except Exception as e:
             print(e)
             result = {'result': "삭제 실패"}
+
+        return jsonify(result)
+
+
+@Size_api.route('/item/<int:id>')
+@Size_api.doc(params={'id': 'Item ID'})
+class SizeR(Resource):
+    def get(self, id):
+        """
+          Get all sizes with item ID.
+        """
+        """
+          Request:
+            GET /sizes/item/1
+          Returns:
+            [
+              {
+                "id": 1,
+                "type": "240",
+                "item_id": 1,
+                "min_price": 90000
+              },
+              {
+                "id": 2,
+                "type": "245",
+                "item_id": 1
+              },
+              ...
+            ]
+        """
+        token = request.headers.get('Authorization')
+
+        if not validate_token(token):
+            return jsonify({'result': "로그인 실패"})
+
+        print(id)
+
+        result = []
+
+        try:
+            sizes = Size.query.filter_by(item_id=id).all()
+
+            for size in sizes:
+                r = make_result(size)
+
+                stock = (Stock.query.filter_by(size_id=size.id, status=False).order_by(Stock.price.asc())
+                         .with_entities(Stock.price).first())
+                if stock:
+                    r['min_price'] = stock.price
+
+                result.append(r)
+
+        except Exception as e:
+            print(e)
 
         return jsonify(result)
 

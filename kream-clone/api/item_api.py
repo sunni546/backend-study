@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import request, jsonify
 from flask_restx import Namespace, Resource
 
-from models import Item, Brand, Category, db
+from models import Item, Brand, Category, db, Size, Stock
 
 Item_api = Namespace(name='Item_api', description="API for managing items")
 
@@ -12,19 +12,9 @@ Item_api = Namespace(name='Item_api', description="API for managing items")
 class ItemCR(Resource):
     def get(self):
         """
-          Get all items. | Get all items with brand name. | Get all items with category name.
+          Get all items.
         """
         """
-          Request:
-            {}
-            or
-            {
-              "brand": "Nike"
-            }
-            or
-            {
-              "category": "Shoes"
-            }
           Returns:
             [
               {
@@ -39,7 +29,8 @@ class ItemCR(Resource):
                 "transaction_number": 238,
                 "interest_number": 0,
                 "brand": "Nike",
-                "category": "Shoes"
+                "category": "Shoes",
+                "min_price": 69000
               },
               {
                 "id": 2,
@@ -53,45 +44,29 @@ class ItemCR(Resource):
                 "transaction_number": 101,
                 "interest_number": 0,
                 "brand": "Adidas",
-                "category": "Shoes"
+                "category": "Shoes",
+                "min_price": 69000
               },
               ...
             ]
         """
-        brand_name = request.json.get('brand')
-        category_name = request.json.get('category')
-        print(brand_name, category_name)
-
         result = []
-        brand, category = None, None
 
         try:
-            if brand_name and category_name:
-                return jsonify({'result': "조회 실패 - 브랜드나 카테고리를 하나만 선택하세요."})
-
-            elif brand_name:
-                brand = Brand.query.filter_by(name=brand_name).first()
-                items = Item.query.filter_by(brand_id=brand.id).all()
-
-            elif category_name:
-                category = Category.query.filter_by(name=category_name).first()
-                items = Item.query.filter_by(category_id=category.id).all()
-
-            else:
-                items = Item.query.all()
+            items = Item.query.all()
 
             for item in items:
-                if brand_name:
-                    category = db.session.get(Category, item.category_id)
+                brand = db.session.get(Brand, item.brand_id)
+                category = db.session.get(Category, item.category_id)
 
-                elif category_name:
-                    brand = db.session.get(Brand, item.brand_id)
+                r = make_result(item, brand, category)
 
-                else:
-                    brand = db.session.get(Brand, item.brand_id)
-                    category = db.session.get(Category, item.category_id)
+                stock = (Size.query.join(Size.stocks).filter(Size.item_id == item.id).filter(Stock.status.isnot(True))
+                         .order_by(Stock.price.asc()).with_entities(Stock.price).first())
+                if stock:
+                    r['min_price'] = stock.price
 
-                result.append(make_result(item, brand, category))
+                result.append(r)
 
         except Exception as e:
             print(e)
@@ -185,7 +160,8 @@ class ItemRUD(Resource):
               "transaction_number": 0,
               "interest_number": 0,
               "brand": "Nike",
-              "category": "Shoes"
+              "category": "Shoes",
+              "min_price": 69000
             }
         """
         print(id)
@@ -197,6 +173,11 @@ class ItemRUD(Resource):
             category = db.session.get(Category, item.category_id)
 
             result = make_result(item, brand, category)
+
+            stock = (Size.query.join(Size.stocks).filter(Size.item_id == item.id).filter(Stock.status.isnot(True))
+                     .order_by(Stock.price.asc()).with_entities(Stock.price).first())
+            if stock:
+                result['min_price'] = stock.price
 
         except Exception as e:
             print(e)
@@ -301,6 +282,101 @@ class ItemRUD(Resource):
         except Exception as e:
             print(e)
             result = {'result': "삭제 실패"}
+
+        return jsonify(result)
+
+
+@Item_api.route('/group')
+class ItemR(Resource):
+    def post(self):
+        """
+          Get all items with brand name. | Get all items with category name.
+        """
+        """
+          Request:
+            {
+              "brand": "Nike"
+            }
+            or
+            {
+              "category": "Shoes"
+            }
+          Returns:
+            [
+              {
+                "id": 1,
+                "name": "Nike Premier 3 TF Black White",
+                "image": null,
+                "recent_price": 72000,
+                "release_price": 140000,
+                "model": "AT6178-010",
+                "released_at": "2022-02-13",
+                "color": "Black/White",
+                "transaction_number": 238,
+                "interest_number": 0,
+                "brand": "Nike",
+                "category": "Shoes",
+                "min_price": 69000
+              },
+              {
+                "id": 2,
+                "name": "Adidas Adifom Superstar Mule Core Black",
+                "image": null,
+                "recent_price": 90000,
+                "release_price": null,
+                "model": "IG8277",
+                "released_at": null,
+                "color": "Black/White",
+                "transaction_number": 101,
+                "interest_number": 0,
+                "brand": "Adidas",
+                "category": "Shoes",
+                "min_price": 69000
+              },
+              ...
+            ]
+        """
+        brand_name = request.json.get('brand')
+        category_name = request.json.get('category')
+        print(brand_name, category_name)
+
+        result = []
+        brand, category = None, None
+
+        try:
+            if brand_name and category_name:
+                return jsonify({'result': "조회 실패 - 브랜드나 카테고리를 하나만 선택하세요."})
+
+            elif brand_name:
+                brand = Brand.query.filter_by(name=brand_name).first()
+                items = Item.query.filter_by(brand_id=brand.id).order_by(Item.transaction_number.desc()).all()
+
+            elif category_name:
+                category = Category.query.filter_by(name=category_name).first()
+                items = Item.query.filter_by(category_id=category.id).order_by(Item.transaction_number.desc()).all()
+
+            else:
+                return jsonify({'result': "조회 실패 - 브랜드나 카테고리를 선택하세요."})
+
+            for item in items:
+                if brand_name:
+                    category = db.session.get(Category, item.category_id)
+
+                elif category_name:
+                    brand = db.session.get(Brand, item.brand_id)
+
+                r = make_result(item, brand, category)
+
+                stock = (Size.query.join(Size.stocks).filter(Size.item_id == item.id).filter(Stock.status.isnot(True))
+                         .order_by(Stock.price.asc()).with_entities(Stock.price).first())
+                if stock:
+                    r['min_price'] = stock.price
+
+                result.append(r)
+
+        except Exception as e:
+            print(e)
+            result = {}
 
         return jsonify(result)
 

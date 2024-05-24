@@ -3,8 +3,8 @@ from datetime import datetime
 from flask import request, jsonify
 from flask_restx import Namespace, Resource
 
-from config import DELIVERY_TYPE
-from models import db, Stock
+from config import DELIVERY_TYPE, DELIVERY_TYPE_PRICE
+from models import db, Stock, Size, Item
 from my_jwt import validate_token
 
 Stock_api = Namespace(name='Stock_api', description="API for managing stocks")
@@ -226,31 +226,22 @@ class StockRUD(Resource):
 class StockR(Resource):
     def get(self, id):
         """
-          Get all stocks with size ID.
+          Get a stock with size ID.
         """
         """
           Request:
             GET /stocks/size/1
           Returns:
-            [
-              {
-                "id": 1,
-                "price": 89000,
-                "delivery_type": "빠른 배송",
-                "status": false,
-                "purchased_at": null,
-                "size_id": 1
-              },
-              {
-                "id": 2,
-                "price": 90000,
-                "delivery_type": "일반 배송",
-                "status": false,
-                "purchased_at": null,
-                "size_id": 1
-              },
-              ...
-            ]
+            {
+              "id": 1,
+              "price": 89000,
+              "delivery_type": "빠른 배송",
+              "delivery_price": 5000,
+              "total_price": 94000,
+              "size_type": 240,
+              "item_name": Nike Premier 3 TF Black White,
+              "item_model": AT6178-010
+            }
         """
         token = request.headers.get('Authorization')
 
@@ -259,16 +250,31 @@ class StockR(Resource):
 
         print(id)
 
-        result = []
-
         try:
-            stocks = Stock.query.filter_by(size_id=id, status=False).order_by(Stock.price.asc()).all()
+            stock = Stock.query.filter_by(size_id=id, status=False).order_by(Stock.price.asc()).first()
 
-            for stock in stocks:
-                result.append(make_result(stock))
+            delivery_price = 0
+            for i in range(len(DELIVERY_TYPE)):
+                if stock.delivery_type == DELIVERY_TYPE[i]:
+                    delivery_price = DELIVERY_TYPE_PRICE[i]
+
+            size = db.session.get(Size, id)
+            item = db.session.get(Item, size.item_id)
+
+            result = {
+                'id': stock.id,
+                'price': stock.price,
+                'delivery_type': stock.delivery_type,
+                'delivery_price': delivery_price,
+                'total_price': stock.price + delivery_price,
+                'size_type': size.type,
+                'item_name': item.name,
+                'item_model': item.model
+            }
 
         except Exception as e:
             print(e)
+            result = {}
 
         return jsonify(result)
 

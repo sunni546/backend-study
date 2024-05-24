@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_restx import Namespace, Resource
 
-from models import Interest, db, Size, Item
+from models import Interest, db, Size, Item, Stock, Brand
 from my_jwt import validate_token, get_user_id
 
 Interest_api = Namespace(name='Interest_api', description="API for managing interests")
@@ -19,11 +19,19 @@ class InterestCR(Resource):
               {
                 "id": 1,
                 "size_id": 1,
+                "size_type": "240",
+                "min_price": 90000,
+                "item_name": "Nike Premier 3 TF Black White",
+                "item_brand": "Nike",
                 "user_id": 1
               },
               {
                 "id": 2,
                 "size_id": 4,
+                "size_type": "ONE SIZE",
+                "min_price": 103000,
+                "item_name": "Adidas Puffy Satin Mini Shoulder Bag Silver Metallic",
+                "item_brand": "Adidas",
                 "user_id": 1
               },
               ...
@@ -43,7 +51,21 @@ class InterestCR(Resource):
             interests = Interest.query.filter_by(user_id=user_id).all()
 
             for interest in interests:
-                result.append(make_result(interest))
+                r = make_result(interest)
+
+                size = db.session.get(Size, interest.size_id)
+                r['size_type'] = size.type
+
+                stock = (Stock.query.filter_by(size_id=size.id, status=False).order_by(Stock.price.asc())
+                         .with_entities(Stock.price).first())
+                if stock:
+                    r['min_price'] = stock.price
+
+                item = db.session.get(Item, size.item_id)
+                r['item_name'] = item.name
+                r['item_brand'] = db.session.get(Brand, item.brand_id).name
+
+                result.append(r)
 
         except Exception as e:
             print(e)
